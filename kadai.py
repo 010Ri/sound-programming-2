@@ -19,7 +19,23 @@ def sine_wave(fs, f, a, duration):
 
     gain = a / np.max(np.abs(s))
     s *= gain
+
     return s
+
+
+def apply_envelope(note, attack_time, decay_time, release_time, fs):
+    length = len(note)
+    attack_samples = int(attack_time * fs)
+    decay_samples = int(decay_time * fs)
+    release_samples = int(release_time * fs)
+
+    envelope = np.ones(length)
+    envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
+    envelope[-release_samples:] = np.linspace(1, 0, release_samples)
+    envelope[attack_samples:(attack_samples + decay_samples)
+             ] = np.linspace(1, 0.7, decay_samples)
+
+    return note * envelope
 
 
 def play_music(score):
@@ -38,10 +54,25 @@ def play_music(score):
         a = score[i, 3]
         duration = score[i, 4]
         x = sine_wave(fs, f, a, duration)
+        # エンベロープを適用
+        attack_time = 0.1
+        decay_time = 0.05
+        release_time = 0.05
+        xe = apply_envelope(x, attack_time, decay_time, release_time, fs)
         offset = int(fs * onset)
         length_of_x = len(x)
         for n in range(length_of_x):
             track[offset + n, j] += x[n]
+
+    # オリジナルとエンベロープ付きの波形を可視化して確認
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.plot(x)
+    plt.title("オリジナル波形")
+    plt.subplot(2, 1, 2)
+    plt.plot(xe)
+    plt.title("エンベロープ付き波形")
+    plt.show()
 
     for j in range(number_of_track):
         for n in range(length_of_s):
@@ -67,9 +98,9 @@ def analyze_wav_file(filename):
     sounds = AudioSegment.from_file(filename, 'wav')
     sample_rate, samples = wavfile.read(filename)
 
-    print(f'channel: {sounds.channels}')
-    print(f'frame rate: {sounds.frame_rate}')
-    print(f'duration: {sounds.duration_seconds} s')
+    # print(f'channel: {sounds.channels}')
+    # print(f'frame rate: {sounds.frame_rate}')
+    # print(f'duration: {sounds.duration_seconds} s')
 
     frequencies, times, spec = spectrogram(samples, fs=sample_rate)
 
@@ -111,7 +142,7 @@ def analyze_wav_file(filename):
         max_amplitude_frequencies.append(
             (max_amplitude_frequency, max_amplitude_value))
 
-    pprint(max_amplitude_frequencies)
+    # pprint(max_amplitude_frequencies)
 
     eps = 1e-10
     Z = 10.0 * np.log10(spec + eps)
@@ -242,7 +273,7 @@ for j in range(7):
 
 score = np.array(score)  # PythonリストをNumPy配列に変換
 
-print(score)
+# print(score)
 amplitude_spectrum = play_music(score)
 
 
