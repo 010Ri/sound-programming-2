@@ -4,6 +4,7 @@ from pydub import AudioSegment
 from scipy.io import wavfile
 from scipy.signal import spectrogram
 from IPython.display import display, Audio
+from pprint import pprint
 
 
 def sine_wave(fs, f, a, duration):
@@ -101,12 +102,16 @@ def analyze_wav_file(filename):
 
     for _ in range(7):
         max_amplitude_index = np.argmax(amplitude_spectrum)
+        max_amplitude_frequency = f[max_amplitude_index]
+        max_amplitude_value = np.abs(X[max_amplitude_index] / N)
+
         skip_range = int(10 / (f[1] - f[0]))
         amplitude_spectrum[max_amplitude_index -
                            skip_range:max_amplitude_index + skip_range + 1] = 0
-        max_amplitude_frequencies.append(f[max_amplitude_index])
+        max_amplitude_frequencies.append(
+            (max_amplitude_frequency, max_amplitude_value))
 
-    print(max_amplitude_frequencies)
+    pprint(max_amplitude_frequencies)
 
     eps = 1e-10
     Z = 10.0 * np.log10(spec + eps)
@@ -115,30 +120,10 @@ def analyze_wav_file(filename):
     ax03.set_ylabel('Frequency (Hz)')
     colorbar = plt.colorbar(image, ax=ax03)
 
-    plt.show()
+    # plt.show()
 
-    return amplitude_spectrum
+    return max_amplitude_frequencies
 
-
-# 自動演奏を実行
-score = np.array([[1, 2, 659.26, 0.8, 1],
-                  [1, 3, 587.33, 0.8, 1],
-                  [1, 4, 523.25, 0.8, 1],
-                  [1, 5, 493.88, 0.8, 1],
-                  [1, 6, 440.00, 0.8, 1],
-                  [1, 7, 392.00, 0.8, 1],
-                  [1, 8, 440.00, 0.8, 1],
-                  [1, 9, 493.88, 0.8, 1],
-                  [2, 2, 261.63, 0.8, 1],
-                  [2, 3, 196.00, 0.8, 1],
-                  [2, 4, 220.00, 0.8, 1],
-                  [2, 5, 164.81, 0.8, 1],
-                  [2, 6, 174.61, 0.8, 1],
-                  [2, 7, 130.81, 0.8, 1],
-                  [2, 8, 174.61, 0.8, 1],
-                  [2, 9, 196.00, 0.8, 1]])
-
-amplitude_spectrum = play_music(score)
 
 # WAVファイルの解析を実行
 wav_filenames = [
@@ -154,5 +139,126 @@ wav_filenames = [
 amplitude_arrays = []
 
 for filename in wav_filenames:
-    amplitude_spectrum = analyze_wav_file(filename)
-    amplitude_arrays.append(amplitude_spectrum)
+    max_amplitude_frequencies = analyze_wav_file(filename)
+    amplitude_arrays.append(max_amplitude_frequencies)
+
+# print(amplitude_arrays)
+# pprint(amplitude_arrays)
+
+normalized_amplitude_arrays = []
+
+for amplitudes in amplitude_arrays:
+    normalized_amplitudes = [
+        (f, v / amplitudes[0][1]) for f, v in amplitudes]
+    normalized_amplitude_arrays.append(normalized_amplitudes)
+
+print("\nmaxを1に")
+pprint(normalized_amplitude_arrays)
+
+# 自動演奏を実行
+score = []
+
+i = 2  # ミ5
+for j in range(7):
+    score.append([1, 2, normalized_amplitude_arrays[i][j][0] * 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 1  # レ5
+for j in range(7):
+    score.append([1, 3, normalized_amplitude_arrays[i][j][0] * 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 0  # ド5
+for j in range(7):
+    score.append([1, 4, normalized_amplitude_arrays[i][j][0] * 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 6  # シ4
+for j in range(7):
+    score.append([1, 5, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 5  # ラ4
+for j in range(7):
+    score.append([1, 6, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 4  # ソ4
+for j in range(7):
+    score.append([1, 7, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 5  # ラ4
+for j in range(7):
+    score.append([1, 8, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 6  # シ4
+for j in range(7):
+    score.append([1, 9, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+# ここからトラック2
+i = 0  # ド4
+for j in range(7):
+    score.append([2, 2, normalized_amplitude_arrays[i][j][0],
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 4  # ソ3
+for j in range(7):
+    score.append([2, 3, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 5  # ラ3
+for j in range(7):
+    score.append([2, 4, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 2  # ミ3
+for j in range(7):
+    score.append([2, 5, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 3  # ファ3
+for j in range(7):
+    score.append([2, 6, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 0  # ド4
+for j in range(7):
+    score.append([2, 7, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 3  # ファ3
+for j in range(7):
+    score.append([2, 8, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+i = 4  # ソ3
+for j in range(7):
+    score.append([2, 9, normalized_amplitude_arrays[i][j][0] / 2,
+                 normalized_amplitude_arrays[i][j][1], 1])
+
+
+score = np.array(score)  # PythonリストをNumPy配列に変換
+
+print(score)
+amplitude_spectrum = play_music(score)
+
+
+# score = np.array([[1, 2, 659.26, 0.8, 1],  # ミ5
+#                   [1, 3, 587.33, 0.8, 1],  # レ5
+#                   [1, 4, 523.25, 0.8, 1],  # ド5
+#                   [1, 5, 493.88, 0.8, 1],  # シ4
+#                   [1, 6, 440.00, 0.8, 1],  # ラ4
+#                   [1, 7, 392.00, 0.8, 1],  # ソ4
+#                   [1, 8, 440.00, 0.8, 1],  # ラ4
+#                   [1, 9, 493.88, 0.8, 1],  # シ4
+#                   [2, 2, 261.63, 0.8, 1],  # ド4
+#                   [2, 3, 196.00, 0.8, 1],  # ソ3
+#                   [2, 4, 220.00, 0.8, 1],  # ラ3
+#                   [2, 5, 164.81, 0.8, 1],  # ミ3
+#                   [2, 6, 174.61, 0.8, 1],  # ファ3
+#                   [2, 7, 130.81, 0.8, 1],  # ド3
+#                   [2, 8, 174.61, 0.8, 1],  # ファ3
+#                   [2, 9, 196.00, 0.8, 1]])  # ソ3
