@@ -5,6 +5,7 @@ from scipy.io import wavfile
 from scipy.signal import spectrogram
 from IPython.display import display, Audio
 from pprint import pprint
+from scipy import signal  # 追加：signal モジュールをインポート
 
 
 # def sine_wave(fs, f, a, duration):
@@ -22,7 +23,7 @@ from pprint import pprint
 
 #     return s
 
-
+# この関数は使っていない
 def apply_envelope(note):
     envelope = np.exp(-2 * np.linspace(0, 1, len(note)))  # -3.8 は減衰を速める係数
     return note * envelope
@@ -52,6 +53,21 @@ def ADSR(fs, A, D, S, R, gate, duration):
             e[n] = e[gate - 1] * np.exp(-2.5 * (n - gate + 1) / R)
 
     return e
+
+
+def LPF(fs, fc, Q):
+    fc /= fs
+    fc = np.tan(np.pi * fc) / (2.0 * np.pi)
+    a = np.zeros(3)
+    b = np.zeros(3)
+    a[0] = 1.0 + 2.0 * np.pi * fc / Q + 4.0 * np.pi * np.pi * fc * fc
+    a[1] = (8.0 * np.pi * np.pi * fc * fc - 2.0) / a[0]
+    a[2] = (1.0 - 2.0 * np.pi * fc / Q + 4.0 * np.pi * np.pi * fc * fc) / a[0]
+    b[0] = 4.0 * np.pi * np.pi * fc * fc / a[0]
+    b[1] = 8.0 * np.pi * np.pi * fc * fc / a[0]
+    b[2] = 4.0 * np.pi * np.pi * fc * fc / a[0]
+    a[0] = 1.0
+    return a, b
 
 
 def sine_wave(fs, f, a, duration, A, D, S, R, gate):
@@ -139,10 +155,10 @@ def play_music(score):
         duration = score[i, 4]
         # x = sine_wave(fs, f, a, duration)
         # パラメータ設定
-        A = 0.1  # Attack 時間 (秒)
+        A = 0.09  # Attack 時間 (秒)
         D = 0.5  # Decay 時間 (秒)
         S = 0.5  # Sustain レベル
-        R = 1  # Release 時間 (秒)
+        R = 0.8  # Release 時間 (秒)
         gate = 0.1  # gate 時間 (秒)
 
         # ADSR エンベロープを適用
@@ -156,7 +172,7 @@ def play_music(score):
             track[offset + n, j] += xe[n]
 
     # オリジナルとエンベロープ付きの波形を可視化して確認
-    plt.figure()
+    # plt.figure()
     # plt.subplot(2, 1, 1)
     # time_original = np.linspace(0, len(x) / fs, len(x), endpoint=False)
     # plt.plot(time_original, x)
@@ -164,18 +180,21 @@ def play_music(score):
     # plt.xlabel("Time (s)")
     # plt.ylabel("Amplitude")
     # plt.subplot(2, 1, 2)
-    time_envelope = np.linspace(0, len(xe) / fs, len(xe), endpoint=False)
-    plt.plot(time_envelope, xe)
-    plt.title("エンベロープ付き波形")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.show()
+    # time_envelope = np.linspace(0, len(xe) / fs, len(xe), endpoint=False)
+    # plt.plot(time_envelope, xe)
+    # plt.title("エンベロープ付き波形")
+    # plt.xlabel("Time (s)")
+    # plt.ylabel("Amplitude")
 
     for j in range(number_of_track):
         for n in range(length_of_s):
             s[n] += track[n, j]
 
-    s = reverb(fs, s)
+    # s = reverb(fs, s)
+
+    # ローパスフィルタの適用
+    a, b = LPF(fs, 1300, 0.85)  # 必要に応じてカットオフ周波数と Q 値を調整できます
+    s = signal.lfilter(b, a, s)
 
     master_volume = 0.5
     s /= np.max(np.abs(s))
@@ -189,8 +208,17 @@ def play_music(score):
             s[n] = 0.0
         s[n] = (s[n] + 0.5) - 32768
 
-    wavfile.write('kadai_adsr.wav', fs, s.astype(np.int16))
-    return Audio('kadai_adsr.wav')
+    # 波形を可視化
+    # plt.figure()
+    # time_waveform = np.linspace(0, len(s) / fs, len(s), endpoint=False)
+    # plt.plot(time_waveform, s)
+    # plt.title("波形")
+    # plt.xlabel("Time (s)")
+    # plt.ylabel("Amplitude")
+    # plt.show()
+
+    wavfile.write('kadai_lpf_1300_085.wav', fs, s.astype(np.int16))
+    return Audio('kadai_lpf_1300_085.wav')
 
 
 def analyze_wav_file(filename):
