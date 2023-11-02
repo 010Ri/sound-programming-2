@@ -42,7 +42,7 @@ def ADSR(fs, A, D, S, R, gate, duration):
 
     if D != 0:
         for n in range(A, gate):
-            e[n] = S + (1.0 - S) * np.exp(-2.5 * (n - A) / D)
+            e[n] = S + (1.0 - S) * np.exp(-2.5 * (n - A) / D * 0.8)
 
     else:
         for n in range(A, gate):
@@ -84,28 +84,28 @@ def reverb(fs, x):
     length_of_x = len(x)
 
     d1 = int(fs * 0.03985)
-    g1 = 0.871402
+    g1 = 0.571402
     u1 = np.zeros(length_of_x)
     for n in range(length_of_x):
         if n - d1 >= 0:
             u1[n] = x[n - d1] + g1 * u1[n - d1]
 
     d2 = int(fs * 0.03610)
-    g2 = 0.882762
+    g2 = 0.582762
     u2 = np.zeros(length_of_x)
     for n in range(length_of_x):
         if n - d2 >= 0:
             u2[n] = x[n - d2] + g2 * u2[n - d2]
 
     d3 = int(fs * 0.03327)
-    g3 = 0.891443
+    g3 = 0.591443
     u3 = np.zeros(length_of_x)
     for n in range(length_of_x):
         if n - d3 >= 0:
             u3[n] = x[n - d3] + g3 * u3[n - d3]
 
     d4 = int(fs * 0.03015)
-    g4 = 0.901117
+    g4 = 0.501117
     u4 = np.zeros(length_of_x)
     for n in range(length_of_x):
         if n - d4 >= 0:
@@ -116,7 +116,7 @@ def reverb(fs, x):
         v1[n] = u1[n] + u2[n] + u3[n] + u4[n]
 
     d5 = int(fs * 0.005)
-    g5 = 0.7
+    g5 = 0.4
     u5 = np.zeros(length_of_x)
     v2 = np.zeros(length_of_x)
     for n in range(length_of_x):
@@ -126,7 +126,7 @@ def reverb(fs, x):
         v2[n] = u5[n] - g5 * (v1[n] + g5 * u5[n])
 
     d6 = int(fs * 0.0017)
-    g6 = 0.7
+    g6 = 0.4
     u6 = np.zeros(length_of_x)
     y = np.zeros(length_of_x)
     for n in range(length_of_x):
@@ -155,7 +155,7 @@ def play_music(score):
         duration = score[i, 4]
         # x = sine_wave(fs, f, a, duration)
         # パラメータ設定
-        A = 0.09  # Attack 時間 (秒)
+        A = 0.06  # Attack 時間 (秒)
         D = 0.5  # Decay 時間 (秒)
         S = 0.5  # Sustain レベル
         R = 0.8  # Release 時間 (秒)
@@ -190,10 +190,10 @@ def play_music(score):
         for n in range(length_of_s):
             s[n] += track[n, j]
 
-    # s = reverb(fs, s)
+    s = reverb(fs, s)
 
     # ローパスフィルタの適用
-    a, b = LPF(fs, 1300, 0.85)  # 必要に応じてカットオフ周波数と Q 値を調整できます
+    a, b = LPF(fs, 1250, 0.7)  # 必要に応じてカットオフ周波数と Q 値を調整できます
     s = signal.lfilter(b, a, s)
 
     master_volume = 0.5
@@ -217,8 +217,8 @@ def play_music(score):
     # plt.ylabel("Amplitude")
     # plt.show()
 
-    wavfile.write('kadai_lpf_1300_085.wav', fs, s.astype(np.int16))
-    return Audio('kadai_lpf_1300_085.wav')
+    wavfile.write('kadai_lpf_1250_07_r.wav', fs, s.astype(np.int16))
+    return Audio('kadai_lpf_1250_07_r.wav')
 
 
 def analyze_wav_file(filename):
@@ -319,83 +319,83 @@ score = []
 i = 2  # ミ5
 for j in range(7):
     score.append([1, 2, normalized_amplitude_arrays[i][j][0] * 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 1  # レ5
 for j in range(7):
     score.append([1, 3, normalized_amplitude_arrays[i][j][0] * 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 0  # ド5
 for j in range(7):
     score.append([1, 4, normalized_amplitude_arrays[i][j][0] * 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 6  # シ4
 for j in range(7):
     score.append([1, 5, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 5  # ラ4
 for j in range(7):
     score.append([1, 6, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 4  # ソ4
 for j in range(7):
     score.append([1, 7, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 5  # ラ4
 for j in range(7):
     score.append([1, 8, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 6  # シ4
 for j in range(7):
     score.append([1, 9, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 # ここからトラック2
 i = 0  # ド4
 for j in range(7):
     score.append([2, 2, normalized_amplitude_arrays[i][j][0],
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 4  # ソ3
 for j in range(7):
     score.append([2, 3, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 5  # ラ3
 for j in range(7):
     score.append([2, 4, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 2  # ミ3
 for j in range(7):
     score.append([2, 5, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 3  # ファ3
 for j in range(7):
     score.append([2, 6, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 0  # ド4
 for j in range(7):
     score.append([2, 7, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 3  # ファ3
 for j in range(7):
     score.append([2, 8, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 i = 4  # ソ3
 for j in range(7):
     score.append([2, 9, normalized_amplitude_arrays[i][j][0] / 2,
-                 normalized_amplitude_arrays[i][j][1], 1])
+                 normalized_amplitude_arrays[i][j][1], 3])
 
 
 score = np.array(score)  # PythonリストをNumPy配列に変換
